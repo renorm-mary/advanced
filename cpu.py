@@ -5,6 +5,7 @@ import queue
 import sys
 import os
 from multiprocessing import Process, Queue, Manager, Pipe
+import multiprocessing
 
 import platform
 if platform.system() == "Windows":
@@ -20,7 +21,7 @@ else:
 
 import subprocess
 from memory import Memory
-from peripherial import Peripheral, Terminal, Storage, RandomNumberGenerator, Display
+from peripherial import Peripheral, Terminal, Storage, RandomNumberGenerator, Display, Keyboard
 
 class ROM:
     def __init__(self, size):
@@ -62,13 +63,11 @@ class CPU:
         self.interrupt_flag = 0
         self.peripherals = {}
         self.storage = {}
-        self.keyboard_buffer = []
-        self.display = Display()
-
 
     def load_memory_dump(self, dump_path):
         with open(dump_path, 'r') as file:
             for line in file:
+                print("instr = ", line)
                 parts = line.strip().split()
                 if len(parts) == 2:
                     address = int(parts[0], 16)
@@ -87,14 +86,15 @@ class CPU:
 
     def handle_interrupt(self):
         if self.interrupt_flag:
-            vector_address = self.INTERRUPT_VECTOR_BASE + self.interrupt_flag * 4
-            isr_address = self.memory.read(vector_address)
+            vector_address = self.INTERRUPT_VECTOR_BASE + self.interrupt_flag #* 4
+            isr_address = (self.memory.read(vector_address)) >> 40
             self.push_stack(self.pc)
             self.pc = isr_address
             self.interrupt_flag = 0
 
     def fetch(self):
         #self.pc 
+        print("pc = ", self.pc)
         if 0 <= self.pc < len(self.rom.memory):
             instruction = self.rom.read(self.pc)
         else:
@@ -247,17 +247,21 @@ class CPU:
             elif opcode == 31:  # IRET
                 self.pc = self.pop_stack()
             elif opcode == 32:  # IN (Read from peripheral)
-                self.registers[operands[0]] = self.read_from_peripheral(operands[1])
+                self.registers[operands[0]] = self.read_from_peripheral(operands[1]) #self.queues[operands[1]].get() #
             elif opcode == 33:  # OUT (Write to peripheral)
                 print("OUT ex", operands_type)
                 if(operands_type == [1,1]):
                     self.write_to_peripheral(self.registers[operands[0]], self.registers[operands[1]])
+                    #self.queues[self.registers[operands[0]]].put(self.registers[operands[1]])
                 elif (operands_type == [1,2]):
                     self.write_to_peripheral(self.registers[operands[0]], operands[1])
+                    #self.queues[self.registers[operands[0]]].put(operands[1])
                 elif (operands_type == [2,2]):
-                    self.write_to_peripheral(operands[0], operands[1])            
+                    self.write_to_peripheral(operands[0], operands[1])
+                    #self.queues[operands[0]].put(operands[1])
                 elif (operands_type == [2,1]):
-                    self.write_to_peripheral(operands[0], self.registers[operands[1]])                    
+                    self.write_to_peripheral(operands[0], self.registers[operands[1]])
+                    #self.queues[operands[0]].put(self.registers[operands[1]])             
             elif opcode == 35:  # CALL
                 self.push_stack(self.pc)
                 self.pc = operands[0]
@@ -277,7 +281,7 @@ class CPU:
 
     def write_to_peripheral(self, address, value):
         for base_address, peripheral in self.peripherals.items():
-            if base_address <= address < base_address + 0x100:  # Assuming each peripheral uses 16 addresses
+            if base_address <= address < base_address + 0x400:  # Assuming each peripheral uses 16 addresses
                 peripheral.write(address - base_address, value)
                 return
         raise IndexError("Peripheral address out of range")
@@ -287,16 +291,18 @@ class CPU:
             self.handle_interrupt()
             instruction = self.fetch()
             opcode, *operands = self.decode(instruction)
+            print("opcode = ", opcode)
+            user_input = input("next instr: ")
 
             operands_type = []
             operands_type.append(operands[0])
             operands_type.append(operands[1])
-            if opcode != 0:
-                print(f"{instruction:016X}\n")
-                print(opcode)
-                print(operands)
-                print("operands type = ", operands_type)
-                print("operands = ", operands[2:])
+            #if opcode != 0:
+                #print(f"{instruction:016X}\n")
+                #print(opcode)
+                #print(operands)
+                #print("operands type = ", operands_type)
+                #print("operands = ", operands[2:])
 
             if (self.execute(opcode, operands[2:], operands_type) == 1):
                 break
@@ -319,10 +325,8 @@ def main():
 
     cpu = CPU()
     # Add the storage peripheral
-    storage = Storage(base_address=0x300, size=1024)  # Fix spelling and add size
+    storage = Storage(base_address=0x400, size=1024)  # Fix spelling and add size
     
-    
-
     print(not args.input_file)
     print(not args.interrupt_file)
     print(not (args.start_address != None))
@@ -345,24 +349,17 @@ def main():
         cpu.load_memory_dump(args.input_file)
         cpu.pc = 0  # Start execution from the beginning of ROM
 
+    # Create instances of the peripheral devices
+    display = Display(base_address=0x800)
+    keyboard = Keyboard(base_address=0x0c00)
+    rand_gen = RandomNumberGenerator(base_address=0x1000)
 
-    
-
-
-    # Add the random generator
-    rand_gen = RandomNumberGenerator(base_address=0x400)
+    cpu.add_peripheral(display)
+    cpu.add_peripheral(keyboard)
     cpu.add_peripheral(rand_gen)
-
-    #Add the terminal peripheral
-    #terminal = Terminal(base_address=0x200)
-    #cpu.add_peripheral(terminal)
-
-    display_thread = threading.Thread(target=cpu.display.run)
-    display_thread.daemon = True  # Set the thread as a daemon
-    display_thread.start()
-
+    #user_input = input("cpu start ")
     cpu.run()
-    
+    user_input = input("cpu stop ")
     print("Registers:", cpu.registers)
     print("Floating Point Registers:", cpu.floating_point_registers)
     print("Vector Registers:", cpu.vector_registers)

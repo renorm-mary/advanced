@@ -1,16 +1,25 @@
 .interrupt
 .org 0x0080
-
-KEYBOARD_INTERRUPT:
+dd 0x5000
+.org 0x0081
+dd 0x6000
+.org 0x0082
+dd 0x7000
+.org 0x0083
+dd 0x8000
+.org 0x0084
+dd 0x9000
+.org 0x5000
+dd KEYBOARD_INTERRUPT:
         ; Handle keyboard input
         IN %R0, #0x201
         STORE %R0, LAST_KEY_PRESSED
         IRET
-
+.org 0x6000
 DISPLAY_INTERRUPT:
         ; Handle display update (if any additional logic is needed)
         IRET
-
+.org 0x7000
 PRINT_STRING_INTERRUPT:
         ; Handle printing a string to the display
         ; R0 should contain the address of the string
@@ -24,14 +33,14 @@ PRINT_LOOP:
 
 PRINT_DONE:
         IRET
-
+.org 0x8000
 FAT16_INIT:
         ; Initialize the FAT16 driver (e.g., read the boot sector)
         LOAD %R0, #0x0000  ; Address of the boot sector
         CALL READ_SECTOR  ; Read the boot sector into memory
         CALL PARSE_BOOT_SECTOR
         IRET
-
+.org 0x9000
 FAT16_READ_FILE:
         ; Handle reading a file from the FAT16 file system
         ; %R0 = address of the file name string

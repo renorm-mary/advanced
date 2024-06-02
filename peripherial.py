@@ -2,13 +2,40 @@ import argparse
 import threading
 import queue
 import sys
+import os
+
 #import termios
 #import tty
 import random
 import tkinter as tk
-from PIL import Image
+from PIL import Image, ImageTk
 import io
 from multiprocessing import Queue
+import multiprocessing
+import numpy as np
+
+def video_buffer_process(queue, buffer_queue):
+    # Create a video buffer
+    buffer = np.zeros((32, 32, 3), dtype=np.int32)
+    image = Image.fromarray((buffer * 255).astype(np.uint8))
+
+    # Create a separate window
+    window = tk.Tk()
+    window.title("Video Buffer Window")
+    window.geometry("32x32")
+
+    # Create a label to display the video buffer
+    label = tk.Label(window, text="Video Buffer")
+    label.pack()
+
+    while True:
+        if not buffer_queue.empty():
+            buffer = buffer_queue.get()
+            image = Image.fromarray((buffer * 255).astype(np.uint8))
+            photo = ImageTk.PhotoImage(image)
+            label.config(image=photo)
+        # Run the window event loop
+        window.update()
 
 class Peripheral:
     def __init__(self, base_address):
@@ -20,6 +47,16 @@ class Peripheral:
     def write(self, address, value):
         raise NotImplementedError("Write method not implemented")
     
+    def input_process(self, queue):
+        while True:
+            message = queue.get()
+            self.write(message[0], message[1])  # Write the value to the specified port number
+
+    def output_process(self, queue):
+        while True:
+            message = self.read()  # Read the value from the peripheral device
+            queue.put(message)  # Put the value and port number in the queue
+
 class Storage:
     def __init__(self, base_address, size):
         self.base_address = base_address
@@ -47,19 +84,91 @@ class RandomNumberGenerator(Peripheral):
     def write(self, offset, value):
         pass  # Write operation is not applicable for RNG
 
-class Display:
-    def __init__(self):
-        self.window = tk.Tk()
-        self.window.title("CPU Display")
-        self.display = tk.Text(self.window, width=40, height=20)
-        self.display.pack()
+class Display(Peripheral):
+    def __init__(self, base_address, width=80, height=25):
+        super().__init__(base_address)
+        self.width = width
+        self.height = height
+        self.buffer = np.zeros((32, 32, 3), dtype=np.int32)
+        #self.window = tk.Tk()  # Create a new tkinter window
+        #self.window.title("Display Peripheral")
+        #self.window.geometry(f"{width * 10}x{height * 20}")  # Set the window size
+        #self.text_widget = tk.Text(self.window, height=height, width=width)  # Create a text widget
+        self.queue = multiprocessing.Queue()
+        self.buffer_queue = multiprocessing.Queue()
+        self.process = multiprocessing.Process(target=video_buffer_process, args=(self.queue, self.buffer_queue))
+        self.process.start()
 
-    def update_display(self, data):
-        self.display.insert(tk.END, str(data) + "\n")
+    def __del__(self):
+        #user_input = input("cpu stop ")
+        self.process.join()
 
-    def run(self):
-        self.window.mainloop()
+    def read(self, address):
+        # Implement the read method for the display device
+        #x = address % self.width
+        #y = address // self.width
+        #return ord(self.buffer[y][x])  # Return the character value at the specified address
+        return self.buffer_queue.get()
 
+    def write(self, address, value):
+        print(address, value)
+        self.buffer.flat[address] = value
+        self.buffer_queue.put(self.buffer)
+        # Implement the write method for the display device
+        #x = address % self.width
+        #y = address // self.width
+        #self.buffer[y][x] = chr(value)  # Update the video buffer
+        #self.text_widget.delete(1.0, tk.END)  # Clear the text widget
+        #for row in self.buffer:
+        #    self.text_widget.insert(tk.END, ''.join(row) + '\n')  # Update the text widget
+        #self.window.update()  # Update the window
+
+    def input_process(self, queue):
+        pid = os.getpid()
+        print(f"Process ID: {pid}")
+        while True:
+            message = queue.get()
+            self.write(message[0], message[1])  # Write the value to the specified port number
+
+    def output_process(self, queue):
+        pid = os.getpid()
+        print(f"Process ID: {pid}")
+        while True:
+            message = self.read()  # Read the value from the peripheral device
+            queue.put(message)  # Put the value and port number in the queue
+
+
+class Keyboard(Peripheral):
+    def __init__(self, base_address):
+        super().__init__(base_address)
+        self.buffer = ""
+
+    def read(self, address):
+        # Implement the read method for the keyboard device
+        if address == self.base_address:
+            if self.buffer:
+                return self.buffer[0]
+            else:
+                return None
+        else:
+            raise IndexError("Address out of range")
+    
+    def write(self, address, value):
+        # Implement the write method for the keyboard device
+        if address == self.base_address:
+            self.buffer += chr(value)
+        else:
+            raise IndexError("Address out of range")
+        
+    def input_process(self, queue):
+        while True:
+            message = queue.get()
+            self.write(message[0], message[1])  # Write the value to the specified port number
+
+    def output_process(self, queue):
+        while True:
+            message = self.read()  # Read the value from the peripheral device
+            queue.put(message)  # Put the value and port number in the queue
 
 class Terminal(Peripheral):
     TEXT_MODE = 0
@@ -123,3 +232,5 @@ class Terminal(Peripheral):
 
     def handle_keypress(self, key):
         self.keyboard_buffer.put(ord(key))
+
+

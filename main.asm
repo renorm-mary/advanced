@@ -5,56 +5,24 @@ START:
         FMOV %F0, #1.0        ; Initialize %F0
         FMOV %F1, #2.0        ; Initialize %F1
 
-        ; Set terminal to text mode
-        OUT 0x800, 0x1
-        OUT 0x801, 0x1
-        OUT 0x805, 0x1
-        OUT 0x800, 0x1
-        OUT 0x851, 0x1
-        OUT 0x892, 0x1
-        OUT 0x800, 0x1
-        OUT 0x801, 0x1
-        OUT 0x895, 0x1
-        OUT 0x840, 0x1
-        OUT 0x801, 0x1
-        OUT 0x805, 0x1
-        OUT 0x800, 0x1
-        OUT 0x901, 0x1
-        OUT 0x825, 0x1
-        OUT 0x860, 0x1
-        OUT 0x851, 0x1
-        OUT 0x835, 0x1
-        OUT 0x830, 0x1
-        OUT 0x891, 0x1
-        OUT 0x805, 0x1
-
-        ; Load the starting address of the string into %R0
+        ; Print greeting message
         LOAD %R0, STRING_ADDR
-
-        ; Trigger display interrupt to print the string
         INT 0x1
 
-        ; Continue main program
-        FMUL %F2, %F0, %F1      ; %F2 = %F0 * %F1
+        ; Calculate %F2 = %F0 * %F1
+        FMUL %F2, %F0, %F1
 
-        ; Load address of word data into %R1
-        LOAD %R1, WORD_ADDR
+        ; Load word data
+        LOAD %R2, WORD_DATA_ADDR, 0x0       ; Load first word
+        LOAD %R3, WORD_DATA_ADDR, 0x2       ; Load second word
 
-        ; Load word data into R2
-        LOAD %R2, %R5, 0x0       ; Load first word
-        LOAD %R3, %R9, 0x0       ; Load second word
-
-        ; Load address of double word data into %R4
-        LOAD %R4, DWORD_ADDR
-
-        ; Load double word data into R5
-        LOAD %R5, %R9, 0x0       ; Load double word
+        ; Load double word data
+        LOAD %R5, DOUBLE_WORD_DATA_ADDR, 0x0 ; Load double word
 
         HALT
 
-.static
 .org 0x400
-STRING_ADDR:
+GREETING_MSG:
         db 72                ; 'H'
         db 101               ; 'e'
         db 108               ; 'l'
@@ -70,11 +38,12 @@ STRING_ADDR:
         db 33                ; '!'
         db 0                 ; Null terminator
 
-.org 0x401
-WORD_ADDR:
+.org 0x410
+WORD_DATA_ADDR:
         dw 0x1234
         dw 0x5678
 
-.org 0x501
-DWORD_ADDR:
+.org 0x510
+DOUBLE_WORD_DATA_ADDR:
         dd 0x12345678
+

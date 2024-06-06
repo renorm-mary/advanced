@@ -101,13 +101,17 @@ FIND_FILE_LOOP:
         CALL READ_SECTOR ; Read the sector
         LOAD %R4, %R1, #0 ; Read file name
         ; Compare file name (assuming 8.3 format)
-        ; TODO: Add file name comparison logic
-        ; If file found, set R2 to starting cluster number
-        ADD %R1, %R1, #1
+        CMP %R4, %R0 ; Compare file names
+        JZ FILE_FOUND ; If file found, set R2 to starting cluster number
+        ADD %R1, %R1, #32 ; Move to the next entry
         SUB %R3, %R3, #1
         JUMP FIND_FILE_LOOP
 FILE_NOT_FOUND:
         ; Handle file not found case
+        RET ; Return from function
+
+FILE_FOUND:
+        LOAD %R2, %R1, #26 ; Load the starting cluster number
         RET ; Return from function
 
 ; Read the contents of the file into the buffer

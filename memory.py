@@ -6,9 +6,10 @@ import sys
 #import tty
 
 class Memory:
-    def __init__(self, size=16 * 16 * 1024 * 1024):  # Increase size for HD resolution
+    def __init__(self, size=32 * 1024 * 1024):  # Increase size for HD resolution
         self.size = size
         self.memory = [0] * size
+        
 
     def load(self, address, value):
         if 0 <= address < self.size:
@@ -27,9 +28,10 @@ class Memory:
             for line in file:
                 parts = line.strip().split()
                 if len(parts) == 2:
-                    address = int(parts[0], 16)
-                    value = int(parts[1], 16)
+                    address = int(parts[0], 32)
+                    value = int(parts[1], 64)
                     self.load(address, value)
+        print(self.memory)
 
     def pim_add(self, addr1, addr2, addr3):
         self.load(addr3, self.read(addr1) + self.read(addr2))

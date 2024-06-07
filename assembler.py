@@ -12,7 +12,7 @@ class Assembler:
             'JNZ': 19, 'FMOV': 20, 'HALT': 21, 'PIM_ADD': 22, 'PIM_SUB': 23,
             'PIM_MUL': 24, 'PIM_DIV': 25, 'PIM_FADD': 26, 'PIM_FSUB': 27, 'PIM_FMUL': 28,
             'PIM_FDIV': 29, 'INT': 30, 'IRET': 31, 'IN': 32, 'OUT': 33, 'LOADF': 34,
-            'CALL': 35, 'RET': 36
+            'CALL': 35, 'RET': 36, 'MOV': 37, 'ADDI': 38
         }
         self.labels = {}
         self.defines = {}
@@ -73,7 +73,11 @@ class Assembler:
         #print(self.labels)
         operand = operand.strip(',')
         operand_type = 0
-        if operand.startswith('%R'):  # Register
+        
+        if operand.startswith("'"):  # ASCII code
+            ascii_code = ord(operand[1:-1])
+            return ascii_code, 2
+        elif operand.startswith('%R'):  # Register
             operand_type = 1
             return int(operand[2:]), operand_type
         elif operand.startswith('%F'):  # Floating point register
@@ -250,6 +254,12 @@ class Assembler:
                 for entry in segment:
                     if len(entry) == 5:
                         address, opcode, operand0_type, operand1_type, operands = entry
+                        if opcode == 17 or opcode == 18 or opcode == 19:
+                            hex_code = f"{opcode:02X}"
+                            hex_code += f"{operands[0]:014X}"
+                            file.write(f"{address:04X} {hex_code.ljust(16, '0')}\n")
+                            continue
+
                         hex_code = f"{opcode:02X}"
                         print("------------------------------------")
                         print("hex_code = ", hex_code)
@@ -269,7 +279,7 @@ class Assembler:
                     elif len(entry) == 2:
                         address, value = entry
                         #print(type(value))
-                        file.write(f"{address:04X} {hex(value).ljust(16, '0')}\n")
+                        file.write(f"{address:04X} {value:016X}\n")
 
 
 def main():

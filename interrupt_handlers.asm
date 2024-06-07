@@ -22,13 +22,16 @@ DISPLAY_INTERRUPT:
 .org 0x7000
 PRINT_STRING_INTERRUPT:
         ; Handle printing a string to the display
-        ; R0 should contain the address of the string
+        ; R4 should contain the address of the string
+        MOV %R30, 0x0
+        MOV %R5, 0x810
 PRINT_LOOP:
-        LOAD %R1, %R0, #0      ; Load character
-        CMP %R1, #0           ; Check if null terminator
+        LOAD %R3, %R4, 0x0     ; Load character
+        CMP %R3, %R30           ; Check if null terminator
         JZ PRINT_DONE        ; If null terminator, end loop
-        OUT #0x202, %R1       ; Output character to display
-        ADD %R0, %R0, #1       ; Move to next character
+        OUT %R5, %R3       ; Output character to display
+        ADDI %R4, %R4, 0x1       ; Move to next character
+        ADDI %R5, %R5, 0x1       ; Move to next position
         JUMP PRINT_LOOP      ; Repeat loop
 
 PRINT_DONE:

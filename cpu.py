@@ -6,7 +6,7 @@ import sys
 import os
 from multiprocessing import Process, Queue, Manager, Pipe
 import multiprocessing
-
+import numpy as np
 import platform
 if platform.system() == "Windows":
     import tkinter as tk
@@ -52,7 +52,7 @@ class CPU:
         self.floating_point_registers = [0.0] * 64
         self.vector_registers = [[0.0] * 4 for _ in range(4)]
         self.memory = Memory()
-        self.rom = ROM(0x100)  # 64KB ROM
+        self.rom = ROM(0x10)  # 64KB ROM
         self.pc = 0
         self.flags = {
             'Z': 0,  # Zero flag
@@ -63,7 +63,7 @@ class CPU:
         self.interrupt_flag = 0
         self.peripherals = {}
         self.storage = {}
-
+        print("mem size = ", self.memory.size)
     def load_memory_dump(self, dump_path):
         with open(dump_path, 'r') as file:
             for line in file:
@@ -72,6 +72,7 @@ class CPU:
                 if len(parts) == 2:
                     address = int(parts[0], 16)
                     handler_code = int(parts[1], 16)
+                    print(handler_code)
                     self.memory.load(address, handler_code)
 
 
@@ -82,12 +83,13 @@ class CPU:
                 if len(parts) == 2:
                     address = int(parts[0], 16)
                     handler_code = int(parts[1], 16)
+                    print("address = ", address)
                     self.memory.load(address, handler_code)
 
     def handle_interrupt(self):
         if self.interrupt_flag:
             vector_address = self.INTERRUPT_VECTOR_BASE + self.interrupt_flag #* 4
-            isr_address = (self.memory.read(vector_address)) >> 40
+            isr_address = self.memory.read(vector_address)# >> 40
             self.push_stack(self.pc)
             self.pc = isr_address
             self.interrupt_flag = 0
@@ -113,18 +115,21 @@ class CPU:
         op_type1 = (instruction >> 48) & 0xF  # Type of second operand (1 - reg, 2 - imm)
         first_operand = (instruction >> 36) & 0xFFF  # Next 12 bits for the first operand
         second_operand = (instruction >> 24) & 0xFFF  # Next 12 bits for the second operand
-        third_operand = (instruction >> 16) & 0xFF  # Next 8 bits for the third operand
+        third_operand = (instruction >> 12) & 0xFFF  # Next 8 bits for the third operand
         immediate_value = instruction & 0xFFFFFFFFFF  # Lowest 40 bits for the immediate value
         print("operand type (decode)= ", op_type0, op_type1)
         return opcode, op_type0, op_type1, first_operand, second_operand, third_operand, immediate_value
 
     def set_flags(self, result):
         self.flags['Z'] = int(result == 0)
-        self.flags['N'] = int(result < 0)
+        self.flags['N'] = int(result != 0)
 
     def push_stack(self, value):
         sp = self.registers[14]
-        self.memory.load(sp, value)
+        if 0 <= sp < len(self.rom.memory):
+            self.rom.load(sp, value)
+        else:
+            self.memory.load(sp, value)
         self.registers[14] -= 1
 
     def pop_stack(self):
@@ -141,13 +146,18 @@ class CPU:
     def execute(self, opcode, operands, operands_type):
         try:
             if opcode == 1:  # ADD
-                if operands_type == 1:
-                    result = self.registers[operands[1]] + self.registers[operands[2]]
-                    self.registers[operands[0]] = result
-                    self.set_flags(result)
-                elif operands_type == 2:
-                    print("OPCODE OPERAND TYPE ERROR")
-                    exit()
+                result = self.registers[operands[1]] + self.registers[operands[2]]
+                self.registers[operands[0]] = result
+                self.set_flags(result)
+            
+            elif opcode == 38:  # ADDI
+                print("ADDI")
+                print("operands: ", operands)
+                result = self.registers[operands[1]] + operands[2]
+                print(result)
+                #user_input = input("next instr: ")
+                self.registers[operands[0]] = result
+                self.set_flags(result)
 
             elif opcode == 2:  # SUB
                 result = self.registers[operands[1]] - self.registers[operands[2]]
@@ -161,7 +171,7 @@ class CPU:
                 self.floating_point_registers[operands[0]] = result
             elif opcode == 5:  # VADD
                 for i in range(4):
-                    self.vector_registers[operands[0]][i] = self.vector_registers[operands[1]][i] + self.vector_registers[operands[2]][i]
+                    self.vector_registers[operands[0]][i] = self.vector_registers[operands[1]][i] + self.vector_registers[operands[2]][i] 
             elif opcode == 6:  # VSUB
                 for i in range(4):
                     self.vector_registers[operands[0]][i] = self.vector_registers[operands[1]][i] - self.vector_registers[operands[2]][i]
@@ -208,24 +218,32 @@ class CPU:
                 self.memory.load(self.registers[operands[1]] + operands[2], self.registers[operands[0]])
             elif opcode == 15:  # CMP
                 result = self.registers[operands[0]] - self.registers[operands[1]]
+                #user_input = input("next instr: ")
+                print(result)
+                #user_input = input("next instr: ")
                 self.set_flags(result)
             elif opcode == 16:  # FCMP
                 result = self.floating_point_registers[operands[0]] - self.floating_point_registers[operands[1]]
                 self.set_flags(result)
             elif opcode == 17:  # JUMP
-                self.pc = operands[0]
+                self.pc = operands[3]
+                print("pc _ after JMP = ", self.pc)
+                #user_input = input("next instr: ")
             elif opcode == 18:  # JZ (Jump if Zero)
+                #user_input = input("next instr: ")
+                print(self.flags)
                 if self.flags['Z']:
-                    self.pc = operands[0]
+                    self.pc = operands[3]
+                #user_input = input("next instr: ")
             elif opcode == 19:  # JNZ (Jump if Not Zero)
                 if not self.flags['Z']:
-                    self.pc = operands[0]
+                    self.pc = operands[3]
             elif opcode == 20:  # FMOV
                 self.floating_point_registers[operands[0]] = float(operands[1])
             elif opcode == 21:  # HALT
                 #exit()
                 return 1
-                raise SystemExit
+                #raise SystemExit
             elif opcode == 22:  # PIM_ADD
                 self.memory.pim_add(operands[0], operands[1], operands[2])
             elif opcode == 23:  # PIM_SUB
@@ -243,6 +261,7 @@ class CPU:
             elif opcode == 29:  # PIM_FDIV
                 self.memory.pim_fdiv(operands[0], operands[1], operands[2])
             elif opcode == 30:  # INT
+                self.push_stack(self.pc)
                 self.interrupt_flag = operands[0]
             elif opcode == 31:  # IRET
                 self.pc = self.pop_stack()
@@ -267,6 +286,11 @@ class CPU:
                 self.pc = operands[0]
             elif opcode == 36:  # RET
                 self.pc = self.pop_stack()
+            elif opcode == 37:  # MOV
+                if operands_type[1] == 1:
+                    self.registers[operands[0]] = self.registers[operands[1]]
+                else:
+                    self.registers[operands[0]] = operands[1]
         except ZeroDivisionError as e:
             print(e)
 
@@ -292,7 +316,9 @@ class CPU:
             instruction = self.fetch()
             opcode, *operands = self.decode(instruction)
             print("opcode = ", opcode)
-            user_input = input("next instr: ")
+            # Print all each from self.registers = [0] * 64
+            print("self.registers = ", self.registers)
+            #user_input = input("next instr: ")
 
             operands_type = []
             operands_type.append(operands[0])

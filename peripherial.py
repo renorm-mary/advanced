@@ -8,7 +8,7 @@ import os
 #import tty
 import random
 import tkinter as tk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageFont, ImageDraw
 import io
 from multiprocessing import Queue
 import multiprocessing
@@ -16,24 +16,41 @@ import numpy as np
 
 def video_buffer_process(queue, buffer_queue):
     # Create a video buffer
-    buffer = np.zeros((32, 32, 3), dtype=np.int32)
+    buffer = np.zeros((1024, 1024, 3), dtype=np.int32)
     image = Image.fromarray((buffer * 255).astype(np.uint8))
 
     # Create a separate window
     window = tk.Tk()
     window.title("Video Buffer Window")
-    window.geometry("32x32")
+    window.geometry("1024x1024")
 
     # Create a label to display the video buffer
     label = tk.Label(window, text="Video Buffer")
     label.pack()
 
+    mode = None
+
     while True:
         if not buffer_queue.empty():
-            buffer = buffer_queue.get()
-            image = Image.fromarray((buffer * 255).astype(np.uint8))
-            photo = ImageTk.PhotoImage(image)
-            label.config(image=photo)
+            buffer_data = buffer_queue.get()
+            if isinstance(buffer_data, str):  # TEXT MODE
+                mode = Display.TEXT_MODE
+                text_buffer = buffer_data
+                text_image = Image.new('RGB', (1024, 1024), color = (73, 109, 137))
+                fnt = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 12)
+                d = ImageDraw.Draw(text_image)
+                for i, line in enumerate(text_buffer.split('\n')):
+                    d.text((10, 10 + i * 12), line, font=fnt, fill=(255, 255, 0))
+                photo = ImageTk.PhotoImage(text_image)
+                label.config(image=photo)
+                label.image = photo
+            else:  # GRAPHICS MODE
+                mode = Display.GRAPHICS_MODE
+                buffer = buffer_data
+                image = Image.fromarray((buffer * 255).astype(np.uint8))
+                photo = ImageTk.PhotoImage(image)
+                label.config(image=photo)
+                label.image = photo
         # Run the window event loop
         window.update()
 
@@ -85,43 +102,53 @@ class RandomNumberGenerator(Peripheral):
         pass  # Write operation is not applicable for RNG
 
 class Display(Peripheral):
+    TEXT_MODE = 0
+    GRAPHICS_MODE = 1
+
     def __init__(self, base_address, width=80, height=25):
         super().__init__(base_address)
         self.width = width
         self.height = height
-        self.buffer = np.zeros((32, 32, 3), dtype=np.int32)
-        #self.window = tk.Tk()  # Create a new tkinter window
-        #self.window.title("Display Peripheral")
-        #self.window.geometry(f"{width * 10}x{height * 20}")  # Set the window size
-        #self.text_widget = tk.Text(self.window, height=height, width=width)  # Create a text widget
+        self.registers = [0] * 10  # 10 registers, including mode register and 9 additional registers
+        self.mode = Display.TEXT_MODE
+        self.text_buffer = [' '] * (width * height)
+        self.graphics_buffer = np.zeros((height, width, 3), dtype=np.int32)
         self.queue = multiprocessing.Queue()
         self.buffer_queue = multiprocessing.Queue()
         self.process = multiprocessing.Process(target=video_buffer_process, args=(self.queue, self.buffer_queue))
         self.process.start()
 
     def __del__(self):
-        #user_input = input("cpu stop ")
         self.process.join()
 
     def read(self, address):
-        # Implement the read method for the display device
-        #x = address % self.width
-        #y = address // self.width
-        #return ord(self.buffer[y][x])  # Return the character value at the specified address
-        return self.buffer_queue.get()
+        if 0 <= address <= 9:  # Unified registers
+            return self.registers[address]
+        elif self.mode == Display.TEXT_MODE:
+            return ord(self.text_buffer[address - 10])
+        else:
+            return self.graphics_buffer.flat[address - 10]
 
     def write(self, address, value):
-        print(address, value)
-        self.buffer.flat[address] = value
-        self.buffer_queue.put(self.buffer)
-        # Implement the write method for the display device
-        #x = address % self.width
-        #y = address // self.width
-        #self.buffer[y][x] = chr(value)  # Update the video buffer
-        #self.text_widget.delete(1.0, tk.END)  # Clear the text widget
-        #for row in self.buffer:
-        #    self.text_widget.insert(tk.END, ''.join(row) + '\n')  # Update the text widget
-        #self.window.update()  # Update the window
+        if address == 0:  # Mode register
+            if value == Display.TEXT_MODE:
+                self.mode = Display.TEXT_MODE
+            elif value == Display.GRAPHICS_MODE:
+                self.mode = Display.GRAPHICS_MODE
+            else:
+                raise ValueError("Invalid mode")
+        elif 1 <= address <= 9:  # Additional registers
+            self.registers[address] = value
+        elif self.mode == Display.TEXT_MODE:
+            self.text_buffer[address - 10] = chr(value)
+            self.update_text_buffer()
+        else:
+            self.graphics_buffer.flat[address - 10] = value
+            self.buffer_queue.put(self.graphics_buffer)
+
+    def update_text_buffer(self):
+        text = ''.join(self.text_buffer)
+        self.buffer_queue.put(text)
 
     def input_process(self, queue):
         pid = os.getpid()

@@ -2,53 +2,40 @@
 .org 0x100
 
 START:  
-        FMOV %F0, #1.0        ; Initialize %F0
-        FMOV %F1, #2.0        ; Initialize %F1
+        ; Initialize stack pointer
+        MOV %R14, 0x100
+        ; Set display mode to text mode
+        MOV %R7, 0x800
+        MOV %R8, 0x0
 
-        ; Set terminal to text mode
-        OUT 0x800, 0x1
-        OUT 0x801, 0x1
-        OUT 0x805, 0x1
-        OUT 0x800, 0x1
-        OUT 0x851, 0x1
-        OUT 0x892, 0x1
-        OUT 0x800, 0x1
-        OUT 0x801, 0x1
-        OUT 0x895, 0x1
-        OUT 0x840, 0x1
-        OUT 0x801, 0x1
-        OUT 0x805, 0x1
-        OUT 0x800, 0x1
-        OUT 0x901, 0x1
-        OUT 0x825, 0x1
-        OUT 0x860, 0x1
-        OUT 0x851, 0x1
-        OUT 0x835, 0x1
-        OUT 0x830, 0x1
-        OUT 0x891, 0x1
-        OUT 0x805, 0x1
+        OUT %R7, %R8
+
+
 
         ; Load the starting address of the string into %R0
-        LOAD %R0, STRING_ADDR
+        MOV %R4, STRING_ADDR
 
         ; Trigger display interrupt to print the string
-        INT 0x1
+        INT 0x2
 
-        ; Continue main program
-        FMUL %F2, %F0, %F1      ; %F2 = %F0 * %F1
+        OUT 0x840, 'H'
+        OUT 0x841, 'E'
+        OUT 0x842, 'R'
+        OUT 0x843, 'O'
+        OUT 0x844, 'I'
+        OUT 0x845, 'N'
+        OUT 0x846, 'R'
+        OUT 0x847, 'S'
+        OUT 0x848, 'U'
+        OUT 0x849, 'S'
+        OUT 0x84a, 'Y'
+        OUT 0x84b, 'M'
+        OUT 0x84c, '='
+        OUT 0x84d, 'L'
+        OUT 0x84e, 'O'
+        OUT 0x84f, 'V'
+        OUT 0x850, 'E'
 
-        ; Load address of word data into %R1
-        LOAD %R1, WORD_ADDR
-
-        ; Load word data into R2
-        LOAD %R2, %R5, 0x0       ; Load first word
-        LOAD %R3, %R9, 0x0       ; Load second word
-
-        ; Load address of double word data into %R4
-        LOAD %R4, DWORD_ADDR
-
-        ; Load double word data into R5
-        LOAD %R5, %R9, 0x0       ; Load double word
 
         HALT
 
@@ -70,7 +57,7 @@ STRING_ADDR:
         db 33                ; '!'
         db 0                 ; Null terminator
 
-.org 0x401
+.org 0x601
 WORD_ADDR:
         dw 0x1234
         dw 0x5678

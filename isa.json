@@ -1,0 +1,363 @@
+{
+  "ISA": "RISC-V FPVBPIM",
+  "GeneralInstructions": [
+    {
+      "mnemonic": "ADD",
+      "operation": "rd = rs1 + rs2",
+      "encoding": "0000000 rs2 rs1 000 rd 0110011"
+    },
+    {
+      "mnemonic": "SUB",
+      "operation": "rd = rs1 - rs2",
+      "encoding": "0100000 rs2 rs1 000 rd 0110011"
+    },
+    {
+      "mnemonic": "MUL",
+      "operation": "rd = rs1 * rs2",
+      "encoding": "0000001 rs2 rs1 000 rd 0110011"
+    },
+    {
+      "mnemonic": "DIV",
+      "operation": "rd = rs1 / rs2",
+      "encoding": "0000001 rs2 rs1 100 rd 0110011"
+    },
+    {
+      "mnemonic": "REM",
+      "operation": "rd = rs1 % rs2",
+      "encoding": "0000001 rs2 rs1 110 rd 0110011"
+    },
+    {
+      "mnemonic": "AND",
+      "operation": "rd = rs1 & rs2",
+      "encoding": "0000000 rs2 rs1 111 rd 0110011"
+    },
+    {
+      "mnemonic": "OR",
+      "operation": "rd = rs1 | rs2",
+      "encoding": "0000000 rs2 rs1 110 rd 0110011"
+    },
+    {
+      "mnemonic": "XOR",
+      "operation": "rd = rs1 ^ rs2",
+      "encoding": "0000000 rs2 rs1 100 rd 0110011"
+    },
+    {
+      "mnemonic": "SLL",
+      "operation": "rd = rs1 << rs2",
+      "encoding": "0000000 rs2 rs1 001 rd 0110011"
+    },
+    {
+      "mnemonic": "SRL",
+      "operation": "rd = rs1 >> rs2",
+      "encoding": "0000000 rs2 rs1 101 rd 0110011"
+    },
+    {
+      "mnemonic": "SRA",
+      "operation": "rd = rs1 >>> rs2",
+      "encoding": "0100000 rs2 rs1 101 rd 0110011"
+    },
+    {
+      "mnemonic": "SLT",
+      "operation": "rd = (rs1 < rs2) ? 1 : 0",
+      "encoding": "0000000 rs2 rs1 010 rd 0110011"
+    },
+    {
+      "mnemonic": "SLTU",
+      "operation": "rd = (rs1 < rs2) ? 1 : 0",
+      "encoding": "0000000 rs2 rs1 011 rd 0110011"
+    },
+    {
+      "mnemonic": "SEQ",
+      "operation": "rd = (rs1 == rs2) ? 1 : 0",
+      "encoding": "0000000 rs2 rs1 100 rd 0110011"
+    },
+    {
+      "mnemonic": "SNE",
+      "operation": "rd = (rs1 != rs2) ? 1 : 0",
+      "encoding": "0000000 rs2 rs1 101 rd 0110011"
+    },
+    {
+      "mnemonic": "ADDI",
+      "operation": "rd = rs1 + imm",
+      "encoding": "imm[11:0] rs1 000 rd 0010011"
+    },
+    {
+      "mnemonic": "ANDI",
+      "operation": "rd = rs1 & imm",
+      "encoding": "imm[11:0] rs1 111 rd 0010011"
+    },
+    {
+      "mnemonic": "ORI",
+      "operation": "rd = rs1 | imm",
+      "encoding": "imm[11:0] rs1 110 rd 0010011"
+    },
+    {
+      "mnemonic": "XORI",
+      "operation": "rd = rs1 ^ imm",
+      "encoding": "imm[11:0] rs1 100 rd 0010011"
+    },
+    {
+      "mnemonic": "SLLI",
+      "operation": "rd = rs1 << imm",
+      "encoding": "0000000 imm[4:0] rs1 001 rd 0010011"
+    },
+    {
+      "mnemonic": "SRLI",
+      "operation": "rd = rs1 >> imm",
+      "encoding": "0000000 imm[4:0] rs1 101 rd 0010011"
+    },
+    {
+      "mnemonic": "SRAI",
+      "operation": "rd = rs1 >>> imm",
+      "encoding": "0100000 imm[4:0] rs1 101 rd 0010011"
+    },
+    {
+      "mnemonic": "LW",
+      "operation": "rd = M[rs1 + imm]",
+      "encoding": "imm[11:0] rs1 010 rd 0000011"
+    },
+    {
+      "mnemonic": "SW",
+      "operation": "M[rs1 + imm] = rs2",
+      "encoding": "imm[11:5] rs2 rs1 010 imm[4:0] 0100011"
+    },
+    {
+      "mnemonic": "LB",
+      "operation": "rd = M[rs1 + imm]",
+      "encoding": "imm[11:0] rs1 000 rd 0000011"
+    },
+    {
+      "mnemonic": "SB",
+      "operation": "M[rs1 + imm] = rs2",
+      "encoding": "imm[11:5] rs2 rs1 000 imm[4:0] 0100011"
+    },
+    {
+      "mnemonic": "LH",
+      "operation": "rd = M[rs1 + imm]",
+      "encoding": "imm[11:0] rs1 001 rd 0000011"
+    },
+    {
+      "mnemonic": "SH",
+      "operation": "M[rs1 + imm] = rs2",
+      "encoding": "imm[11:5] rs2 rs1 001 imm[4:0] 0100011"
+    },
+    {
+      "mnemonic": "BEQ",
+      "operation": "if (rs1 == rs2) pc += imm",
+      "encoding": "imm[12] imm[10:5] rs2 rs1 000 imm[4:1] imm[11] 1100011"
+    },
+    {
+      "mnemonic": "BNE",
+      "operation": "if (rs1 != rs2) pc += imm",
+      "encoding": "imm[12] imm[10:5] rs2 rs1 001 imm[4:1] imm[11] 1100011"
+    },
+    {
+      "mnemonic": "BLT",
+      "operation": "if (rs1 < rs2) pc += imm",
+      "encoding": "imm[12] imm[10:5] rs2 rs1 100 imm[4:1] imm[11] 1100011"
+    },
+    {
+      "mnemonic": "BGE",
+      "operation": "if (rs1 >= rs2) pc += imm",
+      "encoding": "imm[12] imm[10:5] rs2 rs1 101 imm[4:1] imm[11] 1100011"
+    },
+    {
+      "mnemonic": "BLTU",
+      "operation": "if (rs1 < rs2) pc += imm",
+      "encoding": "imm[12] imm[10:5] rs2 rs1 110 imm[4:1] imm[11] 1100011"
+    },
+    {
+      "mnemonic": "BGEU",
+      "operation": "if (rs1 >= rs2) pc += imm",
+      "encoding": "imm[12] imm[10:5] rs2 rs1 111 imm[4:1] imm[11] 1100011"
+    },
+    {
+      "mnemonic": "JAL",
+      "operation": "rd = pc + 4; pc += imm",
+      "encoding": "imm[20] imm[10:1] imm[11] imm[19:12] rd 1101111"
+    },
+    {
+      "mnemonic": "JALR",
+      "operation": "rd = pc + 4; pc = (rs1 + imm) & ~1",
+      "encoding": "imm[11:0] rs1 000 rd 1100111"
+    },
+    {
+      "mnemonic": "ECALL",
+      "operation": "Environment call",
+      "encoding": "0000000 00000 00000 000 00000 1110011"
+    },
+    {
+      "mnemonic": "EBREAK",
+      "operation": "Environment break",
+      "encoding": "0000001 00000 00000 000 00000 1110011"
+    }
+  ],
+  "FExtension": [
+    {
+      "mnemonic": "FLW",
+      "operation": "F[rd] = M[rs1 +imm]”,
+      “encoding”: “0000111 rs1 imm[11:0] rd 010 00000”
+    },
+    {
+        “mnemonic”: “FSW”,
+        “operation”: “M[rs1 + imm] = F[rs2]”,
+        “encoding”: “0100111 rs1 imm[11:5] rs2 imm[4:0] 010 00000”
+},
+{
+“mnemonic”: “FADD.S”,
+“operation”: “F[rd] = F[rs1] + F[rs2]”,
+“encoding”: “1010011 rs1 rs2 000 rd 0000000 00000”
+},
+{
+“mnemonic”: “FSUB.S”,
+“operation”: “F[rd] = F[rs1] - F[rs2]”,
+“encoding”: “1010011 rs1 rs2 000 rd 0000100 00000”
+},
+{
+“mnemonic”: “FMUL.S”,
+“operation”: “F[rd] = F[rs1] * F[rs2]”,
+“encoding”: “1010011 rs1 rs2 000 rd 0001000 00000”
+},
+{
+“mnemonic”: “FDIV.S”,
+“operation”: “F[rd] = F[rs1] / F[rs2]”,
+“encoding”: “1010011 rs1 rs2 000 rd 0001100 00000”
+},
+{
+“mnemonic”: “FSQRT.S”,
+“operation”: “F[rd] = sqrt(F[rs1])”,
+“encoding”: “1010011 rs1 00000 010 rd 0101100 00000”
+},
+{
+“mnemonic”: “FCVT.W.S”,
+“operation”: “rd = (int32_t)F[rs1]”,
+“encoding”: “1010011 rs1 00000 000 rd 1100000 00000”
+},
+{
+“mnemonic”: “FCVT.S.W”,
+“operation”: “F[rd] = (float)rs1”,
+“encoding”: “1010011 rs1 00000 000 rd 1101000 00000”
+},
+{
+“mnemonic”: “FMV.X.W”,
+“operation”: “rd = F[rs1]”,
+“encoding”: “1010011 rs1 00000 000 rd 1110000 00000”
+},
+{
+“mnemonic”: “FMV.W.X”,
+“operation”: “F[rd] = rs1”,
+“encoding”: “1010011 rs1 00000 000 rd 1111000 00000”
+}
+],
+“VExtension”: [
+{
+“mnemonic”: “VSETVLI”,
+“operation”: “VLEN = rs1”,
+“encoding”: “1010111 rs1 00000 rs2 010 vtype vsetvli”
+},
+{
+“mnemonic”: “VADD.VV”,
+“operation”: “V[rd] = V[rs1] + V[rs2]”,
+“encoding”: “1010111 rs1 rs2 000 rd 0000000 vadd.vv”
+},
+{
+“mnemonic”: “VSUB.VV”,
+“operation”: “V[rd] = V[rs1] - V[rs2]”,
+“encoding”: “1010111 rs1 rs2 000 rd 0000100 vsub.vv”
+},
+{
+“mnemonic”: “VMUL.VV”,
+“operation”: “V[rd] = V[rs1] * V[rs2]”,
+“encoding”: “1010111 rs1 rs2 000 rd 0001000 vmul.vv”
+},
+{
+“mnemonic”: “VDIV.VV”,
+“operation”: “V[rd] = V[rs1] / V[rs2]”,
+“encoding”: “1010111 rs1 rs2 000 rd 0001100 vdiv.vv”
+},
+{
+“mnemonic”: “VAND.VV”,
+“operation”: “V[rd] = V[rs1] & V[rs2]”,
+“encoding”: “1010111 rs1 rs2 000 rd 0010000 vand.vv”
+},
+{
+“mnemonic”: “VOR.VV”,
+“operation”: “V[rd] = V[rs1] | V[rs2]”,
+“encoding”: “1010111 rs1 rs2 000 rd 0010100 vor.vv”
+},
+{
+“mnemonic”: “VXOR.VV”,
+“operation”: “V[rd] = V[rs1] ^ V[rs2]”,
+“encoding”: “1010111 rs1 rs2 000 rd 0011000 vxor.vv”
+},
+{
+“mnemonic”: “VLWV”,
+“operation”: “V[rd] = M[rs1 + imm]”,
+“encoding”: “0000111 rs1 imm[11:0] rd 100 00000”
+},
+{
+“mnemonic”: “VSWV”,
+“operation”: “M[rs1 + imm] = V[rs2]”,
+“encoding”: “0100111 rs1 imm[11:5] rs2 imm[4:0] 100 00000”
+}
+],
+“BExtension”: [
+{
+“mnemonic”: “CLZ”,
+“operation”: “rd = count_leading_zeros(rs1)”,
+“encoding”: “0010011 rs1 00000 000 rd 0000100 clz”
+},
+{
+“mnemonic”: “CTZ”,
+“operation”: “rd = count_trailing_zeros(rs1)”,
+“encoding”: “0010011 rs1 00000 000 rd 0000101 ctz”
+},
+{
+“mnemonic”: “CPOP”,
+“operation”: “rd = count_set_bits(rs1)”,
+“encoding”: “0010011 rs1 00000 000 rd 0000110 cpop”
+},
+{
+“mnemonic”: “BEXT”,
+“operation”: “rd = bit_extract(rs1, rs2)”,
+“encoding”: “0110011 rs1 rs2 000 rd 0100000 bext”
+},
+{
+“mnemonic”: “BDEP”,
+“operation”: “rd = bit_deposit(rs1, rs2)”,
+“encoding”: “0110011 rs1 rs2 000 rd 0100100 bdep”
+},
+{
+“mnemonic”: “ROR”,
+“operation”: “rd = (rs1 >> rs2) | (rs1 << (32 - rs2))”,
+“encoding”: “0110011 rs1 rs2 000 rd 0100000 ror”
+},
+{
+“mnemonic”: “ROL”,
+“operation”: “rd = (rs1 << rs2) | (rs1 >> (32 - rs2))”,
+“encoding”: “0110011 rs1 rs2 000 rd 0100100 rol”
+}
+],
+“PIMExtension”: [
+{
+“mnemonic”: “PIM_LOAD”,
+“operation”: “PIM[rd] = M[rs1 + imm]”,
+“encoding”: “1010111 rs1 imm[11:0] rd 010 00000”
+},
+{
+“mnemonic”: “PIM_STORE”,
+“operation”: “M[rs1 + imm] = PIM[rs2]”,
+“encoding”: “1010111 rs1 imm[11:5] rs2 imm[4:0] 010 00000”
+},
+{
+“mnemonic”: “PIM_OP”,
+“operation”: “M[rd] = M[rs1] + M[rs2]”,
+“encoding”: “1010111 rs1 rs2 000 rd 010 00000”
+},
+{
+“mnemonic”: “PIM_COMPARE”,
+“operation”: “rd = (M[rs1] == M[rs2]) ? 1 : 0”,
+“encoding”: “1010111 rs1 rs2 000 rd 010 00000”
+}
+]
+}
